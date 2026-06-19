@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('react-native').default || require('axios');
 const { MongoClient } = require('mongodb');
 
 const API_BASE_URL = 'https://cinemaplus-app.vercel.app';
@@ -30,9 +30,6 @@ async function fetchSeasons(seriesId) {
 }
 
 async function processAndSaveItems(items, config, collection) {
-    let addedCount = 0;
-    let updatedCount = 0;
-
     const seriesItems = items.filter(item => config.type === 'series');
     if (seriesItems.length > 0) {
         for (let i = 0; i < seriesItems.length; i += CONCURRENCY_LIMIT) {
@@ -56,18 +53,15 @@ async function processAndSaveItems(items, config, collection) {
         if (!existingItem) {
             await collection.insertOne(cleanItem);
             console.log(`   ✅ Added: ${cleanItem.title}`);
-            addedCount++;
         } else if (config.forceUpdate) {
             await collection.updateOne({ id: myId }, { $set: cleanItem });
             console.log(`   🔄 Updated: ${cleanItem.title}`);
-            updatedCount++;
         }
     }
-    return { addedCount, updatedCount };
 }
 
 async function main() {
-    console.log("🚀 Scraper Bot Started...");
+    console.log("🚀 CinemaPlus Scraper Bot Started...");
     let mongoClient;
 
     try {
@@ -80,21 +74,19 @@ async function main() {
         for (const endpoint of TARGET_ENDPOINTS) {
             console.log(`\n🌐 Checking: ${endpoint.name}`);
             
-            for (let page = 1; page < 5; page++) {
+            // پوشش کامل از صفحه 0 تا 5 برای اطمینان از بالا آمدن تمام فیلم‌های جدید
+            for (let page = 0; page <= 5; page++) {
                 try {
                     const { data } = await client.get(`${endpoint.url}?page=${page}`);
                     const results = data.posters || data.search_results || data;
-                    if (!results || results.length === 0) break;
                     
-                    const { addedCount, updatedCount } = await processAndSaveItems(results, endpoint, collection);
+                    // اگر این صفحه خالی بود، متوقف نشو و برو صفحه بعدی را تست کن (سوپاپ اطمینان برای صفر یا یک ایندکس بودن)
+                    if (!results || results.length === 0) continue; 
                     
-                    if (addedCount === 0 && updatedCount === 0 && !endpoint.forceUpdate) {
-                        console.log(`   No new items on page ${page + 1}. Skipping rest.`);
-                        break; 
-                    }
+                    await processAndSaveItems(results, endpoint, collection);
+                    console.log(`   Page ${page}: Processed ${results.length} items.`);
                 } catch (error) { 
-                    console.error(`❌ Error on page ${page + 1}:`, error.message);
-                    break; 
+                    console.error(`❌ Error on page ${page}:`, error.message);
                 }
             }
         }
