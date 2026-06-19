@@ -35,16 +35,22 @@ async function processAndSaveItems(items, config, collection) {
         for (let i = 0; i < seriesItems.length; i += CONCURRENCY_LIMIT) {
             const batch = seriesItems.slice(i, i + CONCURRENCY_LIMIT);
             await Promise.all(batch.map(async (seriesItem) => {
-                const seasonData = await fetchSeasons(seriesItem.id);
-                if (seasonData) seriesItem.seasons = seasonData;
+                const slug = seriesItem.id || (seriesItem.url ? seriesItem.url.split('/').filter(Boolean).pop() : null);
+                if (slug) {
+                    const seasonData = await fetchSeasons(slug);
+                    if (seasonData) seriesItem.seasons = seasonData;
+                }
             }));
         }
     }
 
     for (const item of items) {
-        const myId = `plus_${item.id}`;
+        // 🔥 استخراج اسلاگ منحصربه‌فرد از روی لینک برای جلوگیری از باگ undefined
+        const slug = item.id || (item.url ? item.url.split('/').filter(Boolean).pop() : 'unknown_' + Math.random().toString(36).substring(5));
+        const myId = `plus_${slug}`;
+        
         const cleanItem = {
-            id: myId, real_id: item.id, title: item.title, image: item.image, year: item.year, imdb: item.imdb,
+            id: myId, real_id: slug, title: item.title, image: item.image, year: item.year, imdb: item.imdb,
             description: item.description, itemType: config.type, sources: item.sources || [], seasons: item.seasons || null 
         };
 
@@ -74,13 +80,11 @@ async function main() {
         for (const endpoint of TARGET_ENDPOINTS) {
             console.log(`\n🌐 Checking: ${endpoint.name}`);
             
-            // پوشش کامل از صفحه 0 تا 5 برای اطمینان از بالا آمدن تمام فیلم‌های جدید
             for (let page = 0; page <= 5; page++) {
                 try {
                     const { data } = await client.get(`${endpoint.url}?page=${page}`);
                     const results = data.posters || data.search_results || data;
                     
-                    // اگر این صفحه خالی بود، متوقف نشو و برو صفحه بعدی را تست کن (سوپاپ اطمینان برای صفر یا یک ایندکس بودن)
                     if (!results || results.length === 0) continue; 
                     
                     await processAndSaveItems(results, endpoint, collection);
