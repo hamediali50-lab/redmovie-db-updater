@@ -80,7 +80,7 @@ async function main() {
         for (const endpoint of TARGET_ENDPOINTS) {
             console.log(`\n🌐 Checking: ${endpoint.name}`);
             
-            for (let page = 0; page < 5; page++) {
+            for (let page = 1; page < 5; page++) {
                 try {
                     const { data } = await client.get(`${endpoint.url}?page=${page}`);
                     const results = data.posters || data.search_results || data;
