@@ -1,4 +1,4 @@
-const axios = require('react-native').default || require('axios');
+const axios = require('axios');
 const { MongoClient } = require('mongodb');
 
 const API_BASE_URL = 'https://cinemaplus-app.vercel.app';
