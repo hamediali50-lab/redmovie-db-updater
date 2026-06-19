@@ -1,1 +1,0 @@
-# redmovie-db-updater
