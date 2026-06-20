@@ -2,26 +2,26 @@ name: RedMovie Auto Updater
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # هر 30 دقیقه یکبار خودکار اجرا می‌شود[cite: 8]
-  workflow_dispatch: # امکان اجرای دستی ربات[cite: 8]
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   scrape-and-update:
-    runs-on: ubuntu-latest[cite: 8]
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code[cite: 8]
-      uses: actions/checkout@v3[cite: 8]
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-    - name: Setup Node.js[cite: 8]
-      uses: actions/setup-node@v3[cite: 8]
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
       with:
-        node-version: '18'[cite: 8]
+        node-version: '18'
 
-    - name: Install dependencies[cite: 8]
-      run: npm install[cite: 8]
+    - name: Install dependencies
+      run: npm install
 
-    - name: Run Scraper Bot[cite: 8]
+    - name: Run Scraper Bot
       env:
-        MONGO_URI: ${{ secrets.MONGO_URI }} # خواندن ایمن لینک دیتابیس از سکرت گیت‌هاب[cite: 8]
-      run: node scraper-bot.js[cite: 8]
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+      run: node scraper-bot.js
